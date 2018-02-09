@@ -35,32 +35,35 @@
 
     clear(col = BLACK) {
         this.gl.clearColor(col.r, col.g, col.b, col.a);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     }
 
-    drawObject(obj) {
-
+    setupDraw() {
         this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        this.clear();
         this.gl.enable(this.gl.CULL_FACE);
         this.gl.enable(this.gl.DEPTH_TEST);
         this.gl.useProgram(this.program.innerProgram);
+    }
+
+    drawObject(obj) {
+        this.setupDraw();
+
         var vertexPosition = this.program.getAttributeLocation("a_position");
         var matrixLocation = this.gl.getUniformLocation(this.program.innerProgram, "u_matrix");
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, obj.positionBuffer);
-        this.gl.vertexAttribPointer(vertexPosition, obj.size, obj.type, obj.normalize, obj.stride, obj.offset);
-
+        obj.setupVertexAttributes(vertexPosition);
+        
         var mathhelper = MathHelper.getInstance();
         var m = mathhelper.projection(this.gl.canvas.clientWidth, this.gl.canvas.clientHeight, 400);
         var transm = mathhelper.translate(this.gl.canvas.clientWidth / 2, 150, 0);
-        var roty = mathhelper.rotateY(-225);
+        var roty = mathhelper.rotateY(this.rotation++);
 
         m = mathhelper.matrixMultiply(m, transm);
         m = mathhelper.matrixMultiply(m, roty);
 
         this.gl.uniformMatrix4fv(matrixLocation, false, m);
-        this.gl.drawArrays(this.gl.TRIANGLES, 0, 16 * 6);
-        
+
+        obj.draw();
     }
 };
